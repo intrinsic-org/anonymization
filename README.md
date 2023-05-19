@@ -1,2 +1,77 @@
-# anonymization
-Code for Anonymization of CSV files
+# Anonymization Library
+
+The Anonymization Library is a Python library and CLI tool for anonymizing and de-anonymizing personally identifiable information (PII) in CSV files based on a provided YAML schema.
+
+The Anonymization works by encrypting each row with AES encryption. We also enrich the CSV with a simhash column to allow for searching and matching of anonymized data.
+
+## Features
+
+- Anonymize CSV files by encrypting PII columns using AES encryption.
+- De-anonymize previously anonymized CSV files by decrypting PII columns.
+- Supports custom YAML schemas to define which columns contain PII.
+- Generate a secret key for encryption/decryption or provide your own key.
+- Command-line interface (CLI) for easy usage.
+- Enriches the original PII column with a simhash representation of the column
+
+## Installation
+
+To install the anonymization library from source, run the following commands
+to setup a virtual environment and install the library:
+
+```shell
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+## Usage
+
+The anonymization library can be used programmatically as a Python library or through the command-line interface (CLI).
+
+### CLI Usage
+
+To anonymize a CSV file, use the following command:
+
+```shell
+python anonymize.py anonymize example.csv example_anonymized.csv -schema example_schema.yaml -key key.secret
+```
+
+Replace `example.csv` with the path to your input CSV file, `example_anonymized.csv` with the desired path for the anonymized CSV output file, `example_schema.yaml` with the path to your YAML schema file, and `key.secret` with the path to your secret key file.
+
+If key.secret does not exist, a new key will be generated and saved as `key.secret`.
+
+To de-anonymize a previously anonymized CSV file, use the following command:
+
+```shell
+python anonymize.py reveal example_anonymized.csv example_revaled.csv -schema example_schema.yaml -key key.secret
+```
+
+Replace `example_anonymized.csv` with the path to your input CSV file, `example_revaled.csv` with the desired path for the de-anonymized CSV output file, `example_schema.yaml` with the path to your YAML schema file, and `key.secret` with the path to your secret key file.
+
+## Schema File
+
+The YAML schema file defines which columns in the CSV file contain PII. Here's an example schema:
+
+```yaml
+column_name:
+  pii: true
+another_column:
+  pii: false
+```
+
+In this example, `column_name` is marked as containing PII, while `another_column` is not.
+
+## Enrichments
+
+During the anonymization process, extra columns are added for the PII columns including the simhash. More details on SimHash can be found here: https://en.wikipedia.org/wiki/SimHash#:~:text=In%20computer%20science%2C%20SimHash%20is,was%20created%20by%20Moses%20Charikar.
+
+To disable simhash enrichment, pass `-disable-simhash`
+
+## Secret Key
+
+The secret key is used for encryption and decryption of the PII data. If you don't provide a key file, a new key will be generated and saved as `key.secret`. If you want to use your own key, provide the path to the key file.
+
+## License
+
+This project is licensed under the MIT License. See the `LICENSE` file for details.
+```
