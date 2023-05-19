@@ -4,15 +4,6 @@ The Anonymization Library is a Python library and CLI tool for anonymizing and d
 
 The Anonymization works by encrypting each row with AES encryption. We also enrich the CSV with a simhash column to allow for searching and matching of anonymized data.
 
-## Features
-
-- Anonymize CSV files by encrypting PII columns using AES encryption.
-- De-anonymize previously anonymized CSV files by decrypting PII columns.
-- Supports custom YAML schemas to define which columns contain PII.
-- Generate a secret key for encryption/decryption or provide your own key.
-- Command-line interface (CLI) for easy usage.
-- Enriches the original PII column with a simhash representation of the column
-
 ## Installation
 
 To install the anonymization library from source, run the following commands
@@ -23,10 +14,6 @@ python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 ```
-
-## Usage
-
-The anonymization library can be used programmatically as a Python library or through the command-line interface (CLI).
 
 ### CLI Usage
 
