@@ -1,0 +1,10 @@
+event_time:
+  pii: false
+email:
+  pii: true
+email_domain:
+  pii: false
+ip_address:
+  pii: true
+age:
+  pii: false
