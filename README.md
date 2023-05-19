@@ -63,7 +63,7 @@ In this example, `column_name` is marked as containing PII, while `another_colum
 
 ## Enrichments
 
-During the anonymization process, extra columns are added for the PII columns including the simhash. More details on SimHash can be found here: https://en.wikipedia.org/wiki/SimHash#:~:text=In%20computer%20science%2C%20SimHash%20is,was%20created%20by%20Moses%20Charikar.
+During the anonymization process, extra columns are added for the PII columns including the simhash. More details on SimHash can be found here: https://en.wikipedia.org/wiki/SimHash.
 
 To disable simhash enrichment, pass `-disable-simhash`
 
