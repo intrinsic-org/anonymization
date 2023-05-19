@@ -1,8 +1,8 @@
 # Anonymization Library
 
-The Anonymization Library is a Python library and CLI tool for anonymizing and de-anonymizing personally identifiable information (PII) in CSV files based on a provided YAML schema.
+This Library provides a set of functions for anonymizing, de-anonymizing, and enriching personally identifiable information (PII) in CSV files based on a provided YAML schema.
 
-The Anonymization works by encrypting each row with AES encryption. We also enrich the CSV with a simhash column to allow for searching and matching of anonymized data.
+The Anonymization works by encrypting each row with a supplied cryptographic key. We also enrich the CSV with a simhash column to allow for searching and matching of anonymized data.
 
 ## Installation
 

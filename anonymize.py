@@ -27,7 +27,7 @@ def generate_key(password_provided=None, salt=None):
         algorithm=hashes.SHA256(),
         length=32,
         salt=salt,
-        iterations=100000
+        iterations=600000
     )
 
     key = base64.urlsafe_b64encode(kdf.derive(password))  # Can only use kdf once
