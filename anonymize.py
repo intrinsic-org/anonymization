@@ -1,87 +1,112 @@
+"""
+Anonymizes/De-anonymizes a CSV file based on a provided YAML schema.
+"""
 import argparse
 import yaml
 from cryptography.fernet import Fernet
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.asymmetric import rsa
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.asymmetric import padding
-from getpass import getpass
 import pandas as pd
-import base64
-import secrets
 from simhash import Simhash
 
-# Key generation
-def generate_key(password_provided=None, salt=None):
-    if password_provided is None:
-        password_provided = getpass("Enter password to generate secret key: ")
 
-    if salt is None:
-        salt = secrets.token_bytes(16)
+def generate_key() -> bytes:
+    """Generates a Fernet key for encryption/decryption
 
-    password = password_provided.encode()  # Convert to type bytes
-    kdf = PBKDF2HMAC(
-        algorithm=hashes.SHA256(),
-        length=32,
-        salt=salt,
-        iterations=600000
-    )
+    Returns:
+        bytes: the generated Fernet key
+    """
+    return Fernet.generate_key()
 
-    key = base64.urlsafe_b64encode(kdf.derive(password))  # Can only use kdf once
-    return key, salt
 
-# PII data anonymization
-def anonymize(input_csv, output_csv, schema_yaml, key, enrich_simhash=True):
+def anonymize(input_csv_path: str, output_csv_path: str,
+               schema_yaml_path: str, key: bytes, enrich_simhash: bool = True) -> None:
+    """Anonymizes a CSV file based on a provided YAML schema.
+
+    By default, enriches each PII column with a simhash value. 
+    This can be disabled by setting enrich_simhash to False.
+
+    The simhash enrichments creates a new column that has _simash appended 
+    to the original column name. For example, if the original column name 
+    is "email", the new column name will be "email_simhash".
+
+
+    Args:
+        input_csv_path (str): path for input csv file
+        output_csv_path (str): path for output csv file
+        schema_yaml_path (str): path for input schema
+        key (bytes): Fernet key for encryption
+        enrich_simhash (bool, optional): whether to enrich PII columns with Simhash values. 
+            Defaults to True.
+    """
+
     # Load YAML schema file
-    with open(schema_yaml, 'r') as f:
-        schema = yaml.safe_load(f)
+    with open(schema_yaml_path, 'r', encoding="utf-8") as file:
+        schema = yaml.safe_load(file)
 
-    df = pd.read_csv(input_csv)
+    input_df = pd.read_csv(input_csv_path)
 
     # Initialize the fernet class
-    f = Fernet(key)
+    fernet = Fernet(key)
 
-    for column in df.columns:
+    for column in input_df.columns:
         # If the column is PII, encrypt it
         if schema[column]['pii']:
             if enrich_simhash:
                 # Add a simhash column for each column to enrich it
-                df[f'{column}_simhash'] = df[column].apply(lambda x: str(Simhash(x).value))
+                input_df[f'{column}_simhash'] = input_df[column].apply(
+                    lambda x: str(Simhash(x).value))
             # Encrypt the column
-            df[column] = df[column].apply(lambda x: f.encrypt(x.encode()).decode())
+            input_df[column] = input_df[column].apply(lambda x: fernet.encrypt(x.encode()).decode())
 
-    df.to_csv(output_csv, index=False)
+    input_df.to_csv(output_csv_path, index=False)
 
-# PII data de-anonymization
-def reveal(input_csv, output_csv, schema_yaml, key):
+
+def reveal(input_csv, output_csv, schema_yaml, key) -> None:
+    """De-anonymizes the CSV file based on a provided YAML schema.
+
+    Note that this will ignore any column that ends in _simhash.
+    This is because the _simhash columns are only used for
+    enrichment and are not part of the original data.
+
+    Args:
+        input_csv (str): path for input csv file
+        output_csv (str): path for output csv file that's been de-anonymized
+        schema_yaml (str): _description_
+        key (bytes): Fernet key for decryption
+    """
+
     # Load YAML schema file
-    with open(schema_yaml, 'r') as f:
-        schema = yaml.safe_load(f)
+    with open(schema_yaml, 'r', encoding="utf-8") as file:
+        schema = yaml.safe_load(file)
 
-    df = pd.read_csv(input_csv)
+    input_df = pd.read_csv(input_csv)
 
     # Initialize the fernet class
-    f = Fernet(key)
+    fernet = Fernet(key)
 
-    for column in df.columns:
+    for column in input_df.columns:
         # If the column is PII, decrypt it
         # If it ends in "_simhash", remove it
         if not (column.endswith("_simhash")) and schema[column]['pii']:
-            df[column] = df[column].apply(lambda x: f.decrypt(x.encode()).decode())
+            input_df[column] = input_df[column].apply(lambda x: fernet.decrypt(x.encode()).decode())
 
-    df.to_csv(output_csv, index=False)
+    input_df.to_csv(output_csv, index=False)
 
 def main():
-    parser = argparse.ArgumentParser(description='Anonymize/reveal a CSV file based on a provided YAML schema.')
-    parser.add_argument('action', choices=['anonymize', 'reveal'], help='Action to perform: "anonymize" or "reveal".')
-    parser.add_argument('input_csv', help='Input CSV file.')
-    parser.add_argument('output_csv', help='Output CSV file.')
-    parser.add_argument('-schema', required=True, help='YAML file containing data schema.')
+    """Main function for command line usage.
+    """
+    parser = argparse.ArgumentParser(description='Anonymize/reveal a CSV file based on \
+        a provided YAML schema.')
+    parser.add_argument('action', choices=['anonymize', 'reveal'],
+                        help='Action to perform: "anonymize" or "reveal".')
+    parser.add_argument('input_csv',
+                        help='Input CSV file.')
+    parser.add_argument('output_csv',
+                        help='Output CSV file.')
+    parser.add_argument('-schema', required=True,
+                        help='YAML file containing data schema.')
     parser.add_argument('-key', help='Secret key file for encryption/decryption.')
-    parser.add_argument('-disable-simhash', action='store_true', help='Disable Simhash enrichment.')
+    parser.add_argument('-disable-simhash', action='store_true',
+                        help='Disable Simhash enrichment.')
 
     args = parser.parse_args()
 
@@ -91,7 +116,7 @@ def main():
             return
 
     if args.key is None:
-        key, salt = generate_key()
+        key= generate_key()
         with open('key.secret', 'wb') as key_file:
             key_file.write(key)
         print("Secret key generated and saved as 'key.secret'. Please keep it secure.")

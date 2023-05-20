@@ -1,7 +1,9 @@
+"""Example script to generate fake data for the example.
+"""
+
+from datetime import datetime, timedelta
 import pandas as pd
 from faker import Faker
-import random
-from datetime import datetime, timedelta
 
 # Create a Faker instance
 fake = Faker()
